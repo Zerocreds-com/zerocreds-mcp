@@ -13,11 +13,19 @@ export interface Field {
   level?: 'secret' | 'pii' | 'attribute' | 'credential';
 }
 
+export interface LocalFileDestination {
+  type: 'local_file';
+  uid: string;
+  filename: string;
+}
+
+export type DestinationConfig = LocalFileDestination | { type: string; [key: string]: unknown };
+
 export interface CreateSessionArgs {
   title: string;
   description?: string;
   fields: Field[];
-  destination?: string;
+  destination?: string | DestinationConfig;
   ttl_minutes?: number;
 }
 

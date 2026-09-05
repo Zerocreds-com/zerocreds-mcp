@@ -54,9 +54,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             },
           },
           destination: {
-            type: 'string',
             description:
-              'Named destination from server config (e.g. "local-dev", "prod-gcp"). Omit to use the ZEROCREDS_DEFAULT_DESTINATION env var.',
+              'Named destination (string, e.g. "local-dev") or inline config object (e.g. {"type":"local_file","uid":"local","filename":"github"}). Omit to use ZEROCREDS_DEFAULT_DESTINATION env var. For local Mac storage use inline: {"type":"local_file","uid":"local","filename":"<service-name>"}.',
+            oneOf: [
+              { type: 'string' },
+              {
+                type: 'object',
+                properties: {
+                  type: { type: 'string' },
+                },
+                required: ['type'],
+              },
+            ],
           },
           ttl_minutes: {
             type: 'number',
