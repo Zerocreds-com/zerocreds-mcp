@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+
+if (process.argv[2] === 'setup') {
+  const { runSetup } = await import('./setup.js');
+  await runSetup();
+  process.exit(0);
+}
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -55,14 +62,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           destination: {
             description:
-              'Named destination (string, e.g. "local-dev") or inline config object (e.g. {"type":"local_file","uid":"local","filename":"github"}). Omit to use ZEROCREDS_DEFAULT_DESTINATION env var. For local Mac storage use inline: {"type":"local_file","uid":"local","filename":"<service-name>"}.',
+              'Named destination (string, e.g. "os-keychain") or inline config object (e.g. {"type":"os_keychain","service":"zerocreds","account":"github"}). Omit to use ZEROCREDS_DEFAULT_DESTINATION env var. Recommended: "os-keychain" stores in macOS Keychain or Windows Credential Manager automatically.',
             oneOf: [
               { type: 'string' },
               {
                 type: 'object',
-                properties: {
-                  type: { type: 'string' },
-                },
+                properties: { type: { type: 'string' } },
                 required: ['type'],
               },
             ],
@@ -99,12 +104,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === 'zerocreds_create_session') {
     const result = await createSession(args as unknown as CreateSessionArgs);
     return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(result),
-        },
-      ],
+      content: [{ type: 'text' as const, text: JSON.stringify(result) }],
     };
   }
 
@@ -112,12 +112,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { token } = args as { token: string };
     const result = await checkStatus(token);
     return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(result),
-        },
-      ],
+      content: [{ type: 'text' as const, text: JSON.stringify(result) }],
     };
   }
 
