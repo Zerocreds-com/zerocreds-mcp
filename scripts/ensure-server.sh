@@ -33,8 +33,19 @@ if [ -z "$ZEROCREDS_TOKEN" ]; then
 fi
 
 echo "🚀 Starting ZeroCreds MCP server..."
-nohup node "$REPO_ROOT/dist/index.js" > /dev/null 2>&1 &
+
+# Use a named pipe to keep stdin open so the stdio server doesn't exit
+PIPE_PATH="/tmp/zerocreds-server-stdin"
+rm -f "$PIPE_PATH"
+mkfifo "$PIPE_PATH"
+
+# Start the server with stdin from the pipe, stdout/stderr to log file
+nohup node "$REPO_ROOT/dist/index.js" < "$PIPE_PATH" > "$REPO_ROOT/server.log" 2>&1 &
 SERVER_PID=$!
+
+# Keep the write end of the pipe open so the server doesn't get EOF
+exec 3> "$PIPE_PATH"
+
 echo "   Server PID: $SERVER_PID"
 
 # --- 3. Wait for readiness ---------------------------------------------------
