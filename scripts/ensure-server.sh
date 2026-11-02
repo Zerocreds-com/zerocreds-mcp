@@ -19,8 +19,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 # --- 1. Check if server is already running -----------------------------------
-# We look for a process that matches `node dist/index.js` started from this repo.
-# Using pgrep with a pattern that includes the absolute path to avoid false matches.
 if pgrep -f "node $REPO_ROOT/dist/index.js" > /dev/null 2>&1; then
   echo "✅ ZeroCreds MCP server is already running."
   exit 0
@@ -40,18 +38,16 @@ SERVER_PID=$!
 echo "   Server PID: $SERVER_PID"
 
 # --- 3. Wait for readiness ---------------------------------------------------
-# Give the server a moment to bind its transport.
 MAX_WAIT=5
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
+  sleep 0.5
+  WAITED=$((WAITED + 1))
   if pgrep -f "node $REPO_ROOT/dist/index.js" > /dev/null 2>&1; then
-    # The process is alive; assume it's ready.
-    sleep 0.5
-    WAITED=$((WAITED + 1))
-  else
-    echo "❌ Server process died immediately. Check logs or run manually." >&2
-    exit 1
+    echo "✅ ZeroCreds MCP server is ready (PID $SERVER_PID)."
+    exit 0
   fi
 done
 
-echo "✅ ZeroCreds MCP server is ready (PID $SERVER_PID)."
+echo "❌ Server process died. Check logs or run manually." >&2
+exit 1

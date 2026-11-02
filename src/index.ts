@@ -102,17 +102,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ['token'],
       },
     },
-    {
-      name: 'zerocreds_ensure_server',
-      description:
-        'Ensures the ZeroCreds MCP server is running. If it is not already running, this tool starts it in the background and waits for it to become ready. This is useful when the server has crashed or was never started, and you need to create credential collection sessions. Always call this before zerocreds_create_session if you are unsure the server is running.',
-      inputSchema: {
-        type: 'object' as const,
-        properties: {},
-        required: [],
-      },
-    },
-  ],
+    ],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
