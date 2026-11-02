@@ -13,6 +13,13 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { createSession, checkStatus, type CreateSessionArgs } from './client.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+const execAsync = promisify(exec);
 
 const server = new Server(
   { name: 'zerocreds-mcp', version: '0.1.0' },
@@ -95,7 +102,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ['token'],
       },
     },
-  ],
+    ],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -116,8 +123,97 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   }
 
+  if (name === 'zerocreds_ensure_server') {
+    const result = await ensureServer();
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(result) }],
+    };
+  }
+
   throw new Error(`Unknown tool: ${name}`);
 });
+
+// ── zerocreds_ensure_server implementation ──────────────────────────────────
+
+async function ensureServer(): Promise<{ status: string; pid?: number; message: string }> {
+  const repoRoot = path.resolve(__dirname, '..');
+  const nodeBin = process.execPath;
+  const serverScript = path.join(repoRoot, 'dist', 'index.js');
+
+  // 1. Check if already running
+  try {
+    const { stdout } = await execAsync(
+      `pgrep -f "node ${serverScript.replace(/ /g, '\\ ')}"`,
+      { timeout: 5000 },
+    );
+    const pids = stdout.trim().split('\n').filter(Boolean).map(Number);
+    if (pids.length > 0) {
+      return { status: 'already_running', pid: pids[0], message: 'ZeroCreds MCP server is already running.' };
+    }
+  } catch {
+    // pgrep returns non-zero when no match — that's expected, continue.
+  }
+
+  // 2. Read admin token (for logging only — never expose the value)
+  const tokenPath = path.join(os.homedir(), '.config', 'zerocreds', 'local', 'admin-token');
+  let hasToken = false;
+  try {
+    fs.accessSync(tokenPath, fs.constants.R_OK);
+    hasToken = true;
+  } catch {
+    // token file missing — server may still start but will fail later
+  }
+
+  // 3. Start the server
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  if (hasToken) {
+    env.ZEROCREDS_TOKEN = fs.readFileSync(tokenPath, 'utf8').trim();
+  }
+
+  // Spawn detached so it survives the parent process
+  const { spawn } = await import('child_process');
+  const child = spawn(nodeBin, [serverScript], {
+    env,
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+
+  const pid = child.pid;
+  if (!pid) {
+    return { status: 'error', message: 'Failed to spawn server process.' };
+  }
+
+  // 4. Wait for readiness (poll for process existence)
+  const maxWaitMs = 5000;
+  const pollInterval = 500;
+  let waited = 0;
+  while (waited < maxWaitMs) {
+    await new Promise(r => setTimeout(r, pollInterval));
+    waited += pollInterval;
+    try {
+      const { stdout } = await execAsync(
+        `pgrep -f "node ${serverScript.replace(/ /g, '\\ ')}"`,
+        { timeout: 3000 },
+      );
+      if (stdout.trim()) {
+        return {
+          status: 'started',
+          pid,
+          message: `ZeroCreds MCP server started (PID ${pid}).`,
+        };
+      }
+    } catch {
+      // process not yet visible — keep waiting
+    }
+  }
+
+  return {
+    status: 'timeout',
+    pid,
+    message: `Server process spawned (PID ${pid}) but did not become ready within ${maxWaitMs}ms.`,
+  };
+}
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

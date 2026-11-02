@@ -57,6 +57,23 @@ Add to `~/.claude/mcp.json` (Claude Code) or Claude Desktop config:
 
 ## Tools
 
+### `zerocreds_ensure_server`
+
+Ensures the ZeroCreds MCP server is running. If it is not already running, this tool starts it in the background and waits for it to become ready.
+
+**Parameters:** None.
+
+**Returns:**
+```json
+{
+  "status": "already_running | started | error | timeout",
+  "pid": 12345,
+  "message": "ZeroCreds MCP server is already running."
+}
+```
+
+**Use case:** Call this before `zerocreds_create_session` if you are unsure the server is running. It is idempotent — calling it multiple times is safe.
+
 ### `zerocreds_create_session`
 
 Creates a one-time form session. Returns `{ token, url, expires_at }`.
@@ -103,6 +120,27 @@ Claude: "GitHub connected! Proceeding..."
 ## Self-hosting
 
 See [zerocreds-server](https://github.com/Zerocreds-com/zerocreds-server) to run your own instance.
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `scripts/ensure-server.sh` | Starts the ZeroCreds MCP server if it is not already running. Idempotent. |
+| `scripts/health-check.sh` | Verifies the server process is alive and the admin token file exists. |
+
+Run them from the repository root:
+
+```bash
+./scripts/ensure-server.sh
+./scripts/health-check.sh
+```
+
+Or use the npm scripts:
+
+```bash
+npm run ensure-start
+npm run health-check
+```
 
 ## License
 

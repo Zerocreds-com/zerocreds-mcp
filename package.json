@@ -12,6 +12,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "ensure-start": "bash scripts/ensure-server.sh",
+    "health-check": "bash scripts/health-check.sh",
     "inspect": "npx @modelcontextprotocol/inspector dist/index.js"
   },
   "keywords": ["mcp", "credentials", "security", "zerocreds", "llm", "claude"],
