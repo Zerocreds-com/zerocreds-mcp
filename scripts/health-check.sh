@@ -17,9 +17,19 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TOKEN_FILE="$HOME/.config/zerocreds/local/admin-token"
 
 # --- 1. Process check ---------------------------------------------------------
-if pgrep -f "node $REPO_ROOT/dist/index.js" > /dev/null 2>&1; then
-  PID=$(pgrep -f "node $REPO_ROOT/dist/index.js" | head -1)
-  echo "✅ Server process is running (PID: $PID)"
+SERVER_PIDS=$(pgrep -f "node $REPO_ROOT/dist/index.js" 2>/dev/null || true)
+RUNNING_PID=""
+for PID in $SERVER_PIDS; do
+  # Use ps to check if process is alive and not a zombie
+  STAT=$(ps -p "$PID" -o stat= 2>/dev/null | tr -d ' ')
+  if [ -n "$STAT" ] && [ "$STAT" != "Z" ]; then
+    RUNNING_PID=$PID
+    break
+  fi
+done
+
+if [ -n "$RUNNING_PID" ]; then
+  echo "✅ Server process is running (PID: $RUNNING_PID)"
 else
   echo "❌ Server process is NOT running."
   echo "   Run: ./scripts/ensure-server.sh"

@@ -19,7 +19,18 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 # --- 1. Check if server is already running -----------------------------------
-if pgrep -f "node $REPO_ROOT/dist/index.js" > /dev/null 2>&1; then
+# Use pgrep to find PIDs, then verify with ps that process is alive and not a zombie
+SERVER_PIDS=$(pgrep -f "node $REPO_ROOT/dist/index.js" 2>/dev/null || true)
+ALREADY_RUNNING=false
+for PID in $SERVER_PIDS; do
+  STAT=$(ps -p "$PID" -o stat= 2>/dev/null | tr -d ' ')
+  if [ -n "$STAT" ] && [ "$STAT" != "Z" ]; then
+    ALREADY_RUNNING=true
+    break
+  fi
+done
+
+if [ "$ALREADY_RUNNING" = true ]; then
   echo "✅ ZeroCreds MCP server is already running."
   exit 0
 fi
