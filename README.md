@@ -49,7 +49,7 @@ Add to `~/.claude/mcp.json` (Claude Code) or Claude Desktop config:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ZEROCREDS_URL` | no | Server URL (default: `https://zerocreds.ru`) |
+| `ZEROCREDS_URL` | no | Server URL (default: `https://zerocreds.com`) |
 | `ZEROCREDS_TOKEN` | yes | Admin or integrator token |
 | `ZEROCREDS_DEFAULT_DESTINATION` | no | Default destination name (default: `local-dev`) |
 | `ZEROCREDS_TG_BOT_TOKEN` | no | Telegram bot token — auto-sends the link |

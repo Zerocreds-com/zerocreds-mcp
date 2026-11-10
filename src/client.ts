@@ -1,4 +1,4 @@
-const BASE_URL = (process.env.ZEROCREDS_URL ?? 'https://zerocreds.ru').replace(/\/$/, '');
+const BASE_URL = (process.env.ZEROCREDS_URL ?? 'https://zerocreds.com').replace(/\/$/, '');
 const TOKEN = process.env.ZEROCREDS_TOKEN ?? '';
 const DEFAULT_DESTINATION = process.env.ZEROCREDS_DEFAULT_DESTINATION ?? 'local-dev';
 const TG_BOT_TOKEN = process.env.ZEROCREDS_TG_BOT_TOKEN;

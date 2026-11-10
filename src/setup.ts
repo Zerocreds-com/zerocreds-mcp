@@ -57,13 +57,16 @@ export async function runSetup() {
 
   // 1. Server location
   const serverType = await choose('Where is your ZeroCreds server?', [
-    { label: 'zerocreds.ru (hosted)', value: 'hosted' },
+    { label: 'zerocreds.com (hosted)', value: 'hosted' },
+    { label: 'zerocreds.ru (hosted, legacy)', value: 'hosted-ru' },
     { label: 'localhost (I run it locally)', value: 'local' },
     { label: 'Custom URL', value: 'custom' },
   ]);
 
   let serverUrl: string;
   if (serverType === 'hosted') {
+    serverUrl = 'https://zerocreds.com';
+  } else if (serverType === 'hosted-ru') {
     serverUrl = 'https://zerocreds.ru';
   } else if (serverType === 'local') {
     const port = (await ask('\nPort [3456]: ')).trim() || '3456';
